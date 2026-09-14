@@ -1,6 +1,6 @@
 # Architecture Template
 
-Use this structure. Omit sections that are genuinely irrelevant rather than filling them with filler. Prefer a lean spine of invariants over a comprehensive design encyclopedia.
+Use this structure. Omit sections that are genuinely irrelevant rather than filling them with filler. Prefer a lean spine of invariants over a comprehensive design encyclopedia. Skip Domain Landscape and a multi-context map when the altitude inherited one obvious context.
 
 ```markdown
 # Architecture: [System / Feature Name]
@@ -30,7 +30,36 @@ Named approach and the model it implies (boundaries, dependency direction, how w
 C4Context or simple flowchart of system + actors + external deps
 ```
 
-## 4. Architecture Decisions
+## 4. Ubiquitous Language
+
+Inherit PRD wording. Flag conflicts; do not silently rename. One term per concept in this context.
+
+| Term | Meaning in this system | Do not call it |
+|------|------------------------|----------------|
+| … | … | … |
+
+## 5. Domain Landscape
+
+Omit on small features with one obvious context. Label where design effort goes.
+
+| Subdomain | Kind (core / supporting / generic) | Where effort goes |
+|-----------|------------------------------------|-------------------|
+| … | … | … |
+
+## 6. Bounded Contexts & Context Map
+
+At feature altitude, inherit existing contexts unless this slice creates a new language seam. Every edge needs a direction and a named pattern (Shared Kernel, Customer/Supplier, Conformist, Anticorruption Layer, Separate Ways, Open Host Service, Published Language, or Big Ball of Mud).
+
+| Context | Owns | Language notes | Upstream / downstream | Integration pattern |
+|---------|------|----------------|-----------------------|---------------------|
+| … | … | … | … | … |
+
+```mermaid
+flowchart LR
+  ContextA[ContextA] -->|"pattern"| ContextB[ContextB]
+```
+
+## 7. Architecture Decisions
 
 ### AD-1 — [Decision title]
 
@@ -45,7 +74,7 @@ C4Context or simple flowchart of system + actors + external deps
 
 Decisions that only appear in a diagram still get an AD entry.
 
-## 5. Consistency Conventions
+## 8. Consistency Conventions
 
 Cross-cutting rules that are not full ADs but must stay consistent (naming, error shape, auth pattern, logging, ID strategy, API style, etc.).
 
@@ -53,7 +82,7 @@ Cross-cutting rules that are not full ADs but must stay consistent (naming, erro
 |------------|------|
 | … | … |
 
-## 6. Stack & Versions
+## 9. Stack & Versions
 
 Pin only what must not drift. Verify versions before writing them.
 
@@ -64,7 +93,7 @@ Pin only what must not drift. Verify versions before writing them.
 | Data store | | | |
 | … | | | |
 
-## 7. Structural Seed
+## 10. Structural Seed
 
 Minimal shape to start from — owned by the codebase once it exists. Keep terse.
 
@@ -75,13 +104,16 @@ Minimal shape to start from — owned by the codebase once it exists. Keep terse
 
 Optional Mermaid for runtime/deployment view when helpful.
 
-## 8. Data & State
+## 11. Data & State
 
 - Ownership: who writes what
 - Shared data and consistency expectations
 - Key entities at this altitude (not a full schema dump)
+- Aggregates (consistency boundaries): one transaction, one invariant set, referenced from outside by identity only
+- Cross-aggregate consistency: how (event, process, outbox, same-transaction — which means they were not separate aggregates)
+- Domain events: past-tense names from the language table; the contract between contexts
 
-## 9. Quality Attributes
+## 12. Quality Attributes
 
 Only real, measurable constraints — omit dimensions with no requirement.
 
@@ -92,12 +124,13 @@ Only real, measurable constraints — omit dimensions with no requirement.
 | Security / privacy | | |
 | Tenancy | | |
 | Observability | | |
+| Evolvability | What is expected to change; what is sacrificial; replacement trigger | |
 
-## 10. Delivery & Operations
+## 13. Delivery & Operations
 
 Environments, deploy model, config/secrets approach, migration/rollback posture — only what must be consistent across teams.
 
-## 11. Deferred
+## 14. Deferred
 
 What this altitude will not decide, and when to revisit.
 
@@ -105,12 +138,12 @@ What this altitude will not decide, and when to revisit.
 |------|--------------|--------------|
 | … | … | … |
 
-## 12. Open Questions & Assumptions
+## 15. Open Questions & Assumptions
 
 - **Open:** [question] — owner, needed by [when]
 - **Assumed:** [assumption not yet confirmed] `[ASSUMPTION]`
 
-## 13. Risks
+## 16. Risks
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
@@ -119,9 +152,11 @@ What this altitude will not decide, and when to revisit.
 
 ## Writing guidance
 
-- Fix **invariants**, not every implementation detail. If two implementers could choose differently without breaking consistency, prefer Deferred.
+- Fix **invariants**, not every implementation detail. If two implementers could choose differently without breaking consistency, or getting it wrong would be cheap to reverse, prefer Deferred.
+- Internal quality is not traded for speed. Do not gold-plate: no speculative contexts, no language table nobody uses.
 - Every `AD` must state what it **Binds**, what divergence it **Prevents**, and the **Rule** to follow.
 - Keep `AD` IDs stable forever. Amend a Rule in place; add `AD-n` for new decisions; mark superseded rather than renumbering.
 - Structural Seed is a cold-start aid, not a permanent map of the repo.
 - Prefer diagrams for shape; prefer tables for decisions and pins.
 - Requirements describe **what** (PRD); this doc describes **how we stay consistent** while building.
+- Contexts before components. Language before internals.
